@@ -170,8 +170,20 @@ function activateNitro(){ if(player.nitro>5 && !player.nitroActive){ player.nitr
 // Spawn logic
 function spawnOpponent(){ const laneX = W/2 + (Math.random()*460-230); const o = {x: laneX, y: -120, w:40+Math.random()*26, h:60+Math.random()*40, speed: 1.6 + Math.random()*2.8, color:`hsl(${Math.random()*360},70%,50%)`, drift:0}; opponents.push(o); }
 
+// *** NOVO: Função para criar texto flutuante ***
+function createFloatingText(text, x, y, color = '#00ff00') {
+  floatingTexts.push({
+    text: text,
+    x: x,
+    y: y,
+    color: color,
+    timer: 1.0 // Duração de 1 segundo
+  });
+}
+
 // Game variables
 let last = performance.now(); let meterFillEl = document.getElementById('meterFill'); let speedEl = document.getElementById('speed'); let scoreEl = document.getElementById('scoreVal'); let youFillEl = document.getElementById('youFill'); let themFillEl = document.getElementById('themFill');
+let floatingTexts = []; // *** NOVO: Array para textos flutuantes ***
 
 // Main loop
 function update(dt){ if(!running || paused) return;
@@ -209,14 +221,28 @@ function update(dt){ if(!running || paused) return;
     // simple AI: avoid player x
     if(Math.abs(o.x - player.x) < 60 && Math.abs(o.y - player.y) < 240){ o.x += (o.x < player.x ? -1.5 : 1.5) * dt * 60; }
 
-    // collision check
+    // *** MODIFICADO: Lógica de Colisão ***
     if(Math.abs(o.x - player.x) < (o.w/2 + player.w/2) && Math.abs(o.y - player.y) < (o.h/2 + player.h/2)){
       // collision reaction
-      player.speed *= 0.55; score = Math.max(0, score - 15); youScore = Math.max(0, youScore - 3); themScore = 100-youScore; playCollision(); // push opponent back
-      o.y -= 80; }
+      player.speed *= 0.85; // Penalidade de velocidade menor
+      score += 100; // <-- GANHA PONTOS!
+      
+      // Chama o texto flutuante verde neon
+      createFloatingText('+100', player.x, player.y - 20, '#00ff00');
 
-    // passed
-    if(o.y > H + 200){ opponents.splice(i,1); score += 10; youScore = Math.min(100, youScore + 1); themScore = 100-youScore; }
+      // A barra "you/them" agora aumenta a seu favor
+      youScore = Math.min(100, youScore + 5); 
+      themScore = 100 - youScore;
+
+      playCollision(); 
+      o.y -= 80; // Empurra o oponente
+    }
+
+    // *** MODIFICADO: Lógica de Ultrapassagem (não dá mais pontos) ***
+    if(o.y > H + 200){ 
+      opponents.splice(i,1); 
+      // Não ganha mais pontos por ultrapassar
+    }
   }
 
   // spawn
@@ -228,6 +254,16 @@ function update(dt){ if(!running || paused) return;
   // audio pitch
   if(soundEnabled){ startEngineSound(); setEnginePitch(player.speed); }
   else stopEngineSound();
+
+  // *** NOVO: Atualiza os textos flutuantes ***
+  for(let i=floatingTexts.length-1; i>=0; i--){
+    const ft = floatingTexts[i];
+    ft.y -= 30 * dt; // Faz o texto subir
+    ft.timer -= dt;
+    if(ft.timer <= 0) {
+      floatingTexts.splice(i, 1); // Remove o texto depois de 1 segundo
+    }
+  }
 
   // record best
   if(score > bestRecord){ bestRecord = score; localStorage.setItem('tdrb_best', bestRecord); document.getElementById('bestRecord').innerText = bestRecord; }
@@ -255,6 +291,20 @@ function render(){ // background
   // player
   drawCar(player, true);
   drawExhaust(player);
+
+  // *** NOVO: Desenha os textos flutuantes (com efeito neon) ***
+  ctx.save();
+  ctx.font = 'bold 30px Arial'; // Fonte maior e em negrito
+  ctx.textAlign = 'center';
+  for(const ft of floatingTexts){
+    ctx.globalAlpha = ft.timer; // Faz o texto desaparecer (fade out)
+    ctx.fillStyle = ft.color;
+    // Efeito NEON
+    ctx.shadowColor = ft.color;
+    ctx.shadowBlur = 15;
+    ctx.fillText(ft.text, ft.x, ft.y);
+  }
+  ctx.restore();
 
   // HUD extras: nitro bar
   ctx.save(); ctx.translate(24,H-84); ctx.fillStyle='rgba(0,0,0,0.45)'; roundRect(ctx,0,0,180,36,8,true,false); ctx.fillStyle='#fff'; ctx.font='12px system-ui'; ctx.fillText('NITRO',8,20); ctx.fillStyle='#0088ff'; ctx.fillRect(60,8, (player.nitro/100)*100,20); ctx.restore();
