@@ -14,7 +14,8 @@ canvas{display:block;width:100%;height:100%;background:transparent}
 /* HUD */
 #hudTop{position:absolute;left:18px;top:14px;z-index:60}
 .title{font-weight:800;font-size:20px;color:#ff5a5a;text-shadow:0 2px 14px rgba(255,90,90,0.25)}
-#youThem{position:absolute;left:50%;top:18px;transform:translateX(-50%);width:420px;height:18px;border-radius:12px;background:rgba(0,0,0,0.45);display:flex;overflow:hidden;z-index:60}
+/* Barra superior removida */
+#youThem{position:absolute;left:50%;top:18px;transform:translateX(-50%);width:420px;height:18px;border-radius:12px;background:rgba(0,0,0,0.45);display:none;overflow:hidden;z-index:60}
 #youFill{background:linear-gradient(90deg,#6a0dad,#8b2be2);width:65%}
 #themFill{background:linear-gradient(90deg,#ff4444,#ff9966);width:35%}
 #rightHud{position:absolute;right:18px;top:14px;background:var(--panel);padding:8px 12px;border-radius:10px;z-index:60}
@@ -68,8 +69,6 @@ canvas{display:block;width:100%;height:100%;background:transparent}
       <div class="btn" id="btnLeft">◀</div>
       <div class="btn" id="btnAccel">▲</div>
       <div class="btn" id="btnRight">▶</div>
-      <div class="btn" id="btnBrake">▼</div>
-      <div class="btn" id="btnNitro">NITRO</div>
     </div>
 
     <div id="touchPanel">
@@ -147,7 +146,15 @@ const keys = {}; window.addEventListener('keydown', e=>{ keys[e.key] = true; if(
 const touch = {left:false,right:false,acc:false,brake:false}; document.getElementById('touchPanel').addEventListener('touchstart',(ev)=>{ const t=ev.target; const d=t.dataset && t.dataset.d; if(d){ if(d==='left') touch.left=true; if(d==='right') touch.right=true; if(d==='acc') touch.acc=true; if(d==='brake') touch.brake=true; } }, {passive:false}); document.getElementById('touchPanel').addEventListener('touchend',()=>{ touch.left=touch.right=touch.acc=touch.brake=false; });
 
 // Buttons
-['btnLeft','btnRight','btnAccel','btnBrake','btnNitro'].forEach(id=>{ const el=document.getElementById(id); if(!el) return; el.addEventListener('mousedown',()=>{ if(id==='btnLeft') keys.ArrowLeft=true; if(id==='btnRight') keys.ArrowRight=true; if(id==='btnAccel') keys.ArrowUp=true; if(id==='btnBrake') keys.ArrowDown=true; if(id==='btnNitro') activateNitro(); }); el.addEventListener('mouseup',()=>{ if(id==='btnLeft') keys.ArrowLeft=false; if(id==='btnRight') keys.ArrowRight=false; if(id==='btnAccel') keys.ArrowUp=false; if(id==='btnBrake') keys.ArrowDown=false; }); el.addEventListener('touchstart',(e)=>{ e.preventDefault(); el.dispatchEvent(new Event('mousedown')); }, {passive:false}); el.addEventListener('touchend',(e)=>{ e.preventDefault(); el.dispatchEvent(new Event('mouseup')); }, {passive:false}); });
+// JavaScript modificado para não dar erro se os botões não existirem
+['btnLeft','btnRight','btnAccel','btnBrake','btnNitro'].forEach(id=>{ 
+  const el=document.getElementById(id); 
+  if(!el) return; // <-- Esta linha impede que o código quebre
+  el.addEventListener('mousedown',()=>{ if(id==='btnLeft') keys.ArrowLeft=true; if(id==='btnRight') keys.ArrowRight=true; if(id==='btnAccel') keys.ArrowUp=true; if(id==='btnBrake') keys.ArrowDown=true; if(id==='btnNitro') activateNitro(); }); 
+  el.addEventListener('mouseup',()=>{ if(id==='btnLeft') keys.ArrowLeft=false; if(id==='btnRight') keys.ArrowRight=false; if(id==='btnAccel') keys.ArrowUp=false; if(id==='btnBrake') keys.ArrowDown=false; }); 
+  el.addEventListener('touchstart',(e)=>{ e.preventDefault(); el.dispatchEvent(new Event('mousedown')); }, {passive:false}); 
+  el.addEventListener('touchend',(e)=>{ e.preventDefault(); el.dispatchEvent(new Event('mouseup')); }, {passive:false}); 
+});
 
 // Menu interactions
 document.querySelectorAll('.carOption').forEach(el=> el.addEventListener('click', ()=>{ document.querySelectorAll('.carOption').forEach(c=>c.classList.remove('selected')); el.classList.add('selected'); selectedCar = el.dataset.car; player = createPlayer(carPresets[selectedCar]); }));
@@ -282,7 +289,7 @@ function render(){ // background
   ctx.fillStyle = '#262626'; ctx.beginPath(); ctx.moveTo(W/2-300,0); ctx.lineTo(W/2+300,0); ctx.lineTo(W/2+360,H); ctx.lineTo(W/2-360,H); ctx.closePath(); ctx.fill();
 
   // center dashed lines
-  ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 3; ctx.setLineDash([24,24]); ctx.beginPath(); ctx.moveTo(W/2,0); ctx.lineTo(W/2,H); ctx.stroke(); ctx.setLineDash([]);
+  ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 3; ctx.setLineDash([24,24]); ctx.beginPath(); ctx.moveTo(W/2,0); ctx.lineTo(W/H,H); ctx.stroke(); ctx.setLineDash([]);
 
   // Opponents sorted by y
   const sorted = opponents.slice().sort((a,b)=>a.y-b.y);
